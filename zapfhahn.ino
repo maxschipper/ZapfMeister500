@@ -16,9 +16,9 @@
 #define WARN(x) Serial.print("WARNING  : "); Serial.println(x)
 /////////////////////////////////////////////////////
 
-const int buttonPin = 13;   // GPIO Taster
-const int relayPin1 = 7;    // GPIO Relais 1 für oberes Ventil
-const int relayPin2 = 6;    // GPIO Relais 2 für unteres Ventil
+const int button_pin = 13;   // GPIO Taster
+const int relay_pin_1 = 7;    // GPIO Relais 1 für oberes Ventil
+const int relay_pin_2 = 6;    // GPIO Relais 2 für unteres Ventil
 
 const int upper_open_time = 1000;
 const int lower_open_time = 1000;
@@ -29,23 +29,24 @@ enum State {
   STATE_DISPENSING
 };
 
-State currentState = STATE_IDLE;
-unsigned long startTime = 0;
+State current_state = STATE_IDLE;
+unsigned long start_time = 0;
 
 
 
 /////////////////////////////////////////////////////
 
 void close_all_valves() {
-  digitalWrite(relayPin1, LOW);
-  digitalWrite(relayPin2, LOW);
+  digitalWrite(relay_pin_1, LOW);
+  digitalWrite(relay_pin_2, LOW);
+  INFO("alle Ventile geschlossen");
 }
 
 
 void setup() {
-  pinMode(buttonPin, INPUT_PULLUP); // Pullup um Störsignale (float) zu verhindern
-  pinMode(relayPin1, OUTPUT);        
-  pinMode(relayPin2, OUTPUT);        
+  pinMode(button_pin, INPUT_PULLUP); // Pullup um Störsignale (float) zu verhindern
+  pinMode(relay_pin_1, OUTPUT);        
+  pinMode(relay_pin_2, OUTPUT);        
 
   close_all_valves(); // Zu Beginn alles schließen
   Serial.begin(9600);
@@ -56,22 +57,22 @@ void setup() {
 
 
 void open_upper_valve() {
-  digitalWrite(relayPin1, HIGH);
+  digitalWrite(relay_pin_1, HIGH);
   DEBUG("oberes Ventil geöffnet");
 }
 
 void open_lower_valve() {
-  digitalWrite(relayPin2, HIGH);
+  digitalWrite(relay_pin_2, HIGH);
   DEBUG("unteres Ventil geöffnet");
 }
 
 void close_upper_valve() {
-  digitalWrite(relayPin1, LOW);
+  digitalWrite(relay_pin_1, LOW);
   DEBUG("oberes Ventil geschlossen");
 }
 
 void close_lower_valve() {
-  digitalWrite(relayPin2, LOW);
+  digitalWrite(relay_pin_2, LOW);
   DEBUG("unters Ventil geschlossen");
 }
 
@@ -79,70 +80,70 @@ void close_lower_valve() {
 /////////////////////////////////////////////////////
 
 void loop() {
-  static int lastButtonState = HIGH;
+  static int last_button_state = HIGH;
   // Knopfstatus lesen (LOW = gedrückt, HIGH = nicht gedrückt)
-  int buttonState = digitalRead(buttonPin);
-  // bool buttonPressed = (buttonState == LOW);
+  int button_state = digitalRead(button_pin);
 
   // Flankenerkennung: Event nur, wenn HIGH -> LOW switcht
-  bool buttonPressedEvent = (buttonState == LOW && lastButtonState == HIGH);
-  if (buttonPressedEvent) {
+  bool button_pressed_event = (button_state == LOW && last_button_state == HIGH);
+  if (button_pressed_event) {
+    Serial.println("");
     DEBUG("BUTTON PRESS EVENT REGISTERD");
   }
 
 
-  switch (currentState) {
+  switch (current_state) {
     case STATE_IDLE:
       // Im Leerlauf warten wir auf einen Knopfdruck
-      if (buttonPressedEvent) {
+      if (button_pressed_event) {
         INFO("Starte Füllvorgang..."); //INFO
         open_upper_valve();
-        startTime = millis();
-        currentState = STATE_FILLING;
+        start_time = millis();
+        current_state = STATE_FILLING;
       }
       break;
 
     case STATE_FILLING:
       // Während des Füllens prüfen wir, ob die Füllzeit abgelaufen ist
       // oder ob der Knopf erneut gedrückt wurde für Abbruch
-      if (buttonPressedEvent) {
+      if (button_pressed_event) {
         WARN("Abbruch während des Füllens!");
         close_all_valves();
-        currentState = STATE_IDLE;
+        current_state = STATE_IDLE;
 
       } else {
-        unsigned long elapsed = millis() - startTime;
+        unsigned long elapsed = millis() - start_time;
 
         if (elapsed >= upper_open_time) {
           close_upper_valve();
           INFO("Wechsle zum Entleeren...(in 1s)");
           delay(1000);
           open_lower_valve();
-          startTime = millis();
-          currentState = STATE_DISPENSING;
+          start_time = millis();
+          current_state = STATE_DISPENSING;
         }
       }
       break;
 
     case STATE_DISPENSING:
       // Während des Entleerens prüfen wir ebenfalls auf Abbruch oder Ablauf der Zeit
-      if (buttonPressedEvent) {
+      if (button_pressed_event) {
         WARN("Abbruch während des Entleerens!");
         close_all_valves();
-        currentState = STATE_IDLE;
+        current_state = STATE_IDLE;
 
       } else {
-        unsigned long elapsed = millis() - startTime;
+        unsigned long elapsed = millis() - start_time;
 
         if (elapsed >= lower_open_time) {
           close_lower_valve();
           INFO("Vorgang abgeschlossen, zurück zu IDLE");
           Serial.println("");
-          currentState = STATE_IDLE;
+          current_state = STATE_IDLE;
         }
       }
       break;
   }
-  lastButtonState = buttonState;
+  last_button_state = button_state;
 }
 
