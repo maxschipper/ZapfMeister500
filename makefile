@@ -5,10 +5,10 @@ BOARD_FQBN=arduino:avr:uno
 PORT=/dev/cu.usbserial-14140
 PROJECT_DIR=$(shell pwd)  # Aktuelles Verzeichnis als Projektpfad
 
-compile:
+build:
 	arduino-cli compile --fqbn $(BOARD_FQBN) $(PROJECT_DIR)
 
-flash: compile
+flash: build
 	arduino-cli upload -p $(PORT) --fqbn $(BOARD_FQBN) $(PROJECT_DIR)
 
 help:
