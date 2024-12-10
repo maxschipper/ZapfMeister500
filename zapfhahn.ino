@@ -1,6 +1,6 @@
-const int buttonPin = 2;   // GPIO Taster
-const int relayPin1 = 8;    // GPIO Relais 1 für oberes Ventil
-const int relayPin2 = 9;    // GPIO Relais 2 für unteres Ventil
+const int buttonPin = 13;   // GPIO Taster
+const int relayPin1 = 7;    // GPIO Relais 1 für oberes Ventil
+const int relayPin2 = 6;    // GPIO Relais 2 für unteres Ventil
 
 const int upper_open_time = 1000;
 const int lower_open_time = 1000;
@@ -31,6 +31,8 @@ void setup() {
 
   close_all_valves(); // Zu Beginn alles schließen
   Serial.begin(9600);
+  Serial.println("setup done"); // debug
+
 }
 
 /////////////////////////////////////////////////////////////////////////////
