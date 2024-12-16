@@ -40,18 +40,20 @@ float duration, distance;
 const int min_distance = 9;
 
 // STEPPER
-const int upper_open_time = 4000;
-const int lower_open_time = 4000;
+const int upper_open_time = 10000;
+const int lower_open_time = 10000;
 // Voll-Schritt:4096 Halb:2038 Viertel:1024
 const int steps_per_revolution = 512;
+const int stepper_speed = 50;
+const int stepper_rotations = 7;
 
 // Pins entered in sequence IN1-IN3-IN2-IN4 for proper step sequence
 Stepper upper_stepper = Stepper(steps_per_revolution, 8, 10, 9, 11);
-bool upper_stepper_open = false;
+bool upper_stepper_open = true;
 
 // Pins entered in sequence IN1-IN3-IN2-IN4 for proper step sequence
 Stepper lower_stepper = Stepper(steps_per_revolution, 4, 6, 5, 7);
-bool lower_stepper_open = false;
+bool lower_stepper_open = true;
 
 enum State {
   STATE_IDLE,
@@ -67,12 +69,8 @@ unsigned long start_time = 0;
 /////////////////////////////////////////////////////
 
 void close_all_valves() {
-  if (upper_stepper_open) {
     close_upper_valve();
-  } 
-  if (lower_stepper_open) {
     close_lower_valve();
-  }
   INFO("alle Ventile geschlossen");
 }
 
@@ -158,8 +156,8 @@ void open_upper_valve() {
   if (upper_stepper_open) {
     WARN("oberes Ventil ist bereits offen!!");
   } else {
-    upper_stepper.setSpeed(50);
-    upper_stepper.step(4*steps_per_revolution);
+    upper_stepper.setSpeed(stepper_speed);
+    upper_stepper.step(-stepper_rotations*steps_per_revolution);
     upper_stepper_open = true;
     DEBUG("oberes Ventil geöffnet");
   }
@@ -169,8 +167,8 @@ void open_lower_valve() {
   if (lower_stepper_open) {
     WARN("unteres Ventil ist bereits offen!!");
   } else {
-    lower_stepper.setSpeed(50);
-    lower_stepper.step(4*steps_per_revolution);
+    lower_stepper.setSpeed(stepper_speed);
+    lower_stepper.step(-stepper_rotations*steps_per_revolution);
     lower_stepper_open = true;
     DEBUG("unteres Ventil geöffnet");
   }
@@ -178,8 +176,8 @@ void open_lower_valve() {
 
 void close_upper_valve() {
   if (upper_stepper_open) {
-    upper_stepper.setSpeed(50);
-    upper_stepper.step(-4*steps_per_revolution);
+    upper_stepper.setSpeed(stepper_speed);
+    upper_stepper.step(stepper_rotations*steps_per_revolution);
     upper_stepper_open = false;
     DEBUG("oberes Ventil geschlossen");
   } else {
@@ -189,8 +187,8 @@ void close_upper_valve() {
 
 void close_lower_valve() {
   if (lower_stepper_open) {
-    lower_stepper.setSpeed(50);
-    lower_stepper.step(-4*steps_per_revolution);
+    lower_stepper.setSpeed(stepper_speed);
+    lower_stepper.step(stepper_rotations*steps_per_revolution);
     lower_stepper_open = false;
     DEBUG("unteres Ventil geschlossen");
   } else {
@@ -209,7 +207,7 @@ void loop() {
   }
 
   distance = ultraschall_dist();
-  DEBUG(distance);
+  // DEBUG(distance);
 
   if(distance <= min_distance && !is_glass) {
     is_glass = true;
@@ -255,6 +253,7 @@ void loop() {
         unsigned long elapsed = millis() - start_time;
 
         if (elapsed >= upper_open_time) {
+          DEBUG("oberes soll jetzt geschlossen werden");
           close_upper_valve();
           INFO("Wechsle zum Entleeren...(in 5s)");
           delay(5000);
