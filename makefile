@@ -12,6 +12,12 @@ build:
 flash: build
 	arduino-cli upload -p $(PORT) --fqbn $(BOARD_FQBN) $(PROJECT_DIR)
 
+buildout:
+	arduino-cli compile --fqbn $(BOARD_FQBN) --output-dir ./build $(PROJECT_DIR)
+
+clean:
+	rm -r ./build/
+
 help:
 	@echo "Verfügbare Befehle:"
 	@echo "  make compile   - Kompiliert das Programm"
